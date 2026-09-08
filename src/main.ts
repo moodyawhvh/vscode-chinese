@@ -20,9 +20,19 @@ import { getUNCHost, addUNCHostToAllowlist } from './vs/base/node/unc.js';
 import { INLSConfiguration } from './vs/nls.js';
 import { NativeParsedArgs } from './vs/platform/environment/common/argv.js';
 
+// 【中文注】本文件是 VS Code 的 Electron 主进程入口:
+// 1) 配置便携模式与命令行开关(argv.json);
+// 2) 决定沙箱/崩溃报告/用户数据目录/代码缓存路径;
+// 3) 注册自定义协议(with 特权)与全局监听器;
+// 4) 尽早解析 NLS(多语言)配置,待 app.ready 后引导加载真正的
+//    主进程模块 ./vs/code/electron-main/main.js。
+// 全流程通过 perf.mark 打点,便于启动性能分析。
+
 perf.mark('code/didStartMain');
 
 perf.mark('code/willLoadMainBundle', {
+	// 【中文注】构建产物中主 bundle 是内联全部依赖的单个 JS 文件,
+	// 因此把 `willLoadMainBundle` 标记为主 bundle 加载流程的起点。
 	// When built, the main bundle is a single JS file with all
 	// dependencies inlined. As such, we mark `willLoadMainBundle`
 	// as the start of the main bundle loading process.
@@ -30,12 +40,17 @@ perf.mark('code/willLoadMainBundle', {
 });
 perf.mark('code/didLoadMainBundle');
 
+// 【中文注】启用便携模式支持(数据目录跟随应用,见 bootstrap-node.ts)
 // Enable portable support
 const portable = configurePortable(product);
 
 const args = parseCLIArgs();
+// 【中文注】同步配置静态命令行参数(读取 argv.json,见 configureCommandlineSwitchesSync)
 // Configure static command line arguments
 const argvConfig = configureCommandlineSwitchesSync(args);
+// 【中文注】全局启用沙箱,除非:
+// 1) 命令行通过 `--no-sandbox` 或 `--disable-chromium-sandbox` 显式禁用;
+// 2) argv.json 中配置了 `disable-chromium-sandbox: true`。
 // Enable sandbox globally unless
 // 1) disabled via command line using either
 //    `--no-sandbox` or `--disable-chromium-sandbox` argument.
@@ -46,6 +61,7 @@ if (args['sandbox'] &&
 	app.enableSandbox();
 } else if (app.commandLine.hasSwitch('no-sandbox') &&
 	!app.commandLine.hasSwitch('disable-gpu-sandbox')) {
+	// 【中文注】使用 --no-sandbox 时同时禁用 GPU 沙箱
 	// Disable GPU sandbox whenever --no-sandbox is used.
 	app.commandLine.appendSwitch('disable-gpu-sandbox');
 } else {
@@ -53,22 +69,29 @@ if (args['sandbox'] &&
 	app.commandLine.appendSwitch('disable-gpu-sandbox');
 }
 
+// 【中文注】在 app 'ready' 事件之前设置用户数据目录;
+// Windows 上若目录位于 UNC 网络路径,需先把主机加入允许列表
 // Set userData path before app 'ready' event
 const userDataPath = getUserDataPath(args, product.nameShort ?? 'code-oss-dev');
 if (process.platform === 'win32') {
 	const userDataUNCHost = getUNCHost(userDataPath);
 	if (userDataUNCHost) {
-		addUNCHostToAllowlist(userDataUNCHost); // enables to use UNC paths in userDataPath
+		addUNCHostToAllowlist(userDataUNCHost); // 【中文注】允许在 userDataPath 中使用 UNC 路径
 	}
 }
 app.setPath('userData', userDataPath);
 
+// 【中文注】解析 V8 代码缓存路径(加速启动,见 getCodeCachePath)
 // Resolve code cache path
 const codeCachePath = getCodeCachePath();
 
+// 【中文注】禁用 Electron 默认应用菜单(https://github.com/electron/electron/issues/35512)
 // Disable default menu (https://github.com/electron/electron/issues/35512)
 Menu.setApplicationMenu(null);
 
+// 【中文注】配置崩溃报告器:
+// - 指定 --crash-reporter-directory 时,崩溃转储只存本地目录,不上传;
+// - 否则按 argv.json 的 enable-crash-reporter 与 product.json 的 appCenter 配置决定是否上传。
 // Configure crash reporter
 perf.mark('code/willStartCrashReporter');
 // If a crash-reporter-directory is specified we store the crash reports
@@ -84,14 +107,17 @@ if (args['crash-reporter-directory'] || (argvConfig['enable-crash-reporter'] && 
 }
 perf.mark('code/didStartCrashReporter');
 
-// Set logs path before app 'ready' event if running portable
-// to ensure that no 'logs' folder is created on disk at a
-// location outside of the portable directory
+// 【中文注】便携模式下,在 app 'ready' 前设置日志路径,
+// 避免在便携目录之外的磁盘位置创建 'logs' 文件夹
 // (https://github.com/microsoft/vscode/issues/56651)
 if (portable.isPortable) {
 	app.setAppLogsPath(path.join(userDataPath, 'logs'));
 }
 
+// 【中文注】注册自定义协议及其特权:
+// vscode-webview(WebView 内容)、vscode-file(本地资源)、
+// vscode-remote-resource / vscode-managed-remote-resource(远程资源)。
+// 特权包括 secure、Fetch API、CORS、ServiceWorker、代码缓存等。
 // Register custom schemes with privileges
 protocol.registerSchemesAsPrivileged([
 	{
@@ -116,12 +142,18 @@ protocol.registerSchemesAsPrivileged([
 registerListeners();
 
 /**
+ * 【中文注】NLS(自然语言支持)配置解析:
+ * 若 argv.json 已在 `app.ready` 事件前定义了语言,可以提前解析;
+ * 否则必须等 `app.ready` 后才能拿到 OS 区域设置再解析。
+ *
  * We can resolve the NLS configuration early if it is defined
  * in argv.json before `app.ready` event. Otherwise we can only
  * resolve NLS after `app.ready` event to resolve the OS locale.
  */
 let nlsConfigurationPromise: Promise<INLSConfiguration> | undefined = undefined;
 
+// 【中文注】用最优先的 OS 语言做语言推荐。注意该 API 在 Linux 上
+// 可能返回空数组(例如用户只配置了 'C' 区域);任何平台上数组为空都回退到 'en'。
 // Use the most preferred OS language for language recommendation.
 // The API might return an empty array on Linux, such as when
 // the 'C' locale is the user's only configured locale.
@@ -138,6 +170,10 @@ if (userLocale) {
 	});
 }
 
+// 【中文注】把语言传给 Electron,让 Windows 上的标题栏控件
+// (Windows Control Overlay)正确渲染;macOS 暂不传
+// (https://github.com/microsoft/vscode/issues/167543)。
+// `qps-ploc` 是微软伪语言包,此时按 `en` 处理。
 // Pass in the locale to Electron so that the
 // Windows Control Overlay is rendered correctly on Windows.
 // For now, don't pass in the locale on macOS due to
@@ -151,6 +187,8 @@ if (process.platform === 'win32' || process.platform === 'linux') {
 	app.commandLine.appendSwitch('lang', electronLocale);
 }
 
+// 【中文注】就绪后加载主进程代码;若带 --trace 参数,
+// 先启动内容追踪(content tracing)再进入 onReady
 // Load our code once ready
 app.once('ready', function () {
 	if (args['trace']) {
@@ -206,32 +244,47 @@ async function onReady() {
 }
 
 /**
+ * 【中文注】主进程启动例程:
+ * 把 NLS 配置与代码缓存路径写入环境变量,
+ * 引导 ESM 加载器,然后动态 import 真正的主进程模块。
+ *
  * Main startup routine
  */
 async function startup(codeCachePath: string | undefined, nlsConfig: INLSConfiguration): Promise<void> {
 	process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfig);
 	process.env['VSCODE_CODE_CACHE_PATH'] = codeCachePath || '';
 
+	// 【中文注】引导 ESM 加载器
 	// Bootstrap ESM
 	await bootstrapESM();
 
+	// 【中文注】加载主进程入口模块
 	// Load Main
 	await import('./vs/code/electron-main/main.js');
 	perf.mark('code/didRunMainBundle');
 }
 
+// 【中文注】读取并应用 argv.json 中允许的命令行开关:
+// - SUPPORTED_ELECTRON_SWITCHES:转发给 Electron/Chromium 的开关
+//   (禁用硬件加速、颜色配置、LCD 字体渲染、代理绕过、远程调试端口等);
+// - SUPPORTED_MAIN_PROCESS_SWITCHES:追加到 process.argv 的主进程开关
+//   (提议 API、日志级别、内存密钥库、RDP 显示跟踪等)。
 function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 	const SUPPORTED_ELECTRON_SWITCHES = [
 
+		// 【中文注】我们为 --disable-gpu 提供的别名
 		// alias from us for --disable-gpu
 		'disable-hardware-acceleration',
 
+		// 【中文注】覆盖使用的颜色配置文件
 		// override for the color profile to use
 		'force-color-profile',
 
+		// 【中文注】禁用 LCD 字体渲染(Chromium 标志)
 		// disable LCD font rendering, a Chromium flag
 		'disable-lcd-text',
 
+		// 【中文注】为分号分隔的主机列表绕过指定代理
 		// bypass any specified proxy for the given semi-colon-separated list of hosts
 		'proxy-bypass-list',
 
@@ -240,28 +293,35 @@ function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 
 	if (process.platform === 'linux') {
 
+		// 【中文注】Linux 上通过该标志强制启用屏幕阅读器
 		// Force enable screen readers on Linux via this flag
 		SUPPORTED_ELECTRON_SWITCHES.push('force-renderer-accessibility');
 
+		// 【中文注】Linux 上覆盖使用的密码管理后端
 		// override which password-store is used on Linux
 		SUPPORTED_ELECTRON_SWITCHES.push('password-store');
 	}
 
 	const SUPPORTED_MAIN_PROCESS_SWITCHES = [
 
+		// 【中文注】通过 argv.json 持久启用提议 API(https://github.com/microsoft/vscode/issues/99775)
 		// Persistently enable proposed api via argv.json: https://github.com/microsoft/vscode/issues/99775
 		'enable-proposed-api',
 
+		// 【中文注】日志级别,默认 'info',可选 'error'、'warn'、'info'、'debug'、'trace'、'off'
 		// Log level to use. Default is 'info'. Allowed values are 'error', 'warn', 'info', 'debug', 'trace', 'off'.
 		'log-level',
 
+		// 【中文注】使用内存存储保存密钥(secrets)
 		// Use an in-memory storage for secrets
 		'use-inmemory-secretstorage',
 
+		// 【中文注】启用显示器跟踪,在 RDP 下恢复最大化窗口(https://github.com/electron/electron/issues/47016)
 		// Enables display tracking to restore maximized windows under RDP: https://github.com/electron/electron/issues/47016
 		'enable-rdp-display-tracking',
 	];
 
+	// 【中文注】读取 argv 配置(用户数据目录下的 argv.json)
 	// Read argv config
 	const argvConfig = readArgvConfigSync();
 
@@ -388,6 +448,7 @@ interface IArgvConfig {
 
 function readArgvConfigSync(): IArgvConfig {
 
+	// 【中文注】在 app('ready') 之前同步读取(必要时创建)argv.json 配置文件
 	// Read or create the argv.json config file sync before app('ready')
 	const argvConfigPath = getArgvConfigPath();
 	let argvConfig: IArgvConfig | undefined = undefined;
@@ -401,6 +462,7 @@ function readArgvConfigSync(): IArgvConfig {
 		}
 	}
 
+	// 【中文注】兜底为空配置
 	// Fallback to default
 	if (!argvConfig) {
 		argvConfig = {};
@@ -412,12 +474,14 @@ function readArgvConfigSync(): IArgvConfig {
 function createDefaultArgvConfigSync(argvConfigPath: string): void {
 	try {
 
+		// 【中文注】确保 argv.json 的父目录存在
 		// Ensure argv config parent exists
 		const argvConfigPathDirname = path.dirname(argvConfigPath);
 		if (!fs.existsSync(argvConfigPathDirname)) {
 			fs.mkdirSync(argvConfigPathDirname);
 		}
 
+		// 【中文注】默认 argv.json 内容(允许向 VS Code 传递永久命令行参数)
 		// Default argv content
 		const defaultArgvConfigContent = [
 			'// This configuration file allows you to pass permanent command line arguments to VS Code.',
@@ -442,6 +506,8 @@ function createDefaultArgvConfigSync(argvConfigPath: string): void {
 }
 
 function getArgvConfigPath(): string {
+	// 【中文注】argv.json 路径:便携模式放便携目录;
+	// 普通模式放 `~/.<产品数据文件夹名>/argv.json`,开发模式加 `-dev` 后缀
 	const vscodePortable = process.env['VSCODE_PORTABLE'];
 	if (vscodePortable) {
 		return path.join(vscodePortable, 'argv.json');
@@ -475,12 +541,14 @@ function configureCrashReporter(): void {
 			}
 		}
 
+		// 【中文注】崩溃转储默认存在 crashDumps 目录,这里改为用户指定的目录
 		// Crashes are stored in the crashDumps directory by default, so we
 		// need to change that directory to the provided one
 		console.log(`Found --crash-reporter-directory argument. Setting crashDumps directory to be '${crashReporterDirectory}'`);
 		app.setPath('crashDumps', crashReporterDirectory);
 	}
 
+	// 【中文注】未指定本地目录时,按 product.json 中的 appCenter 配置上传崩溃报告
 	// Otherwise we configure the crash reporter from product.json
 	else {
 		const appCenter = product.appCenter;
@@ -517,6 +585,8 @@ function configureCrashReporter(): void {
 					submitURL = appCenter['linux-x64'];
 				}
 				submitURL = submitURL.concat('&uid=', crashReporterId, '&iid=', crashReporterId, '&sid=', crashReporterId);
+				// 【中文注】为显式启动崩溃报告器的子 Node 进程传递 id;
+				// 对 vscode 而言目前就是扩展宿主(ExtensionHost)进程。
 				// Send the id for child node process that are explicitly starting crash reporter.
 				// For vscode this is ExtensionHost process currently.
 				const argv = process.argv;
@@ -524,6 +594,8 @@ function configureCrashReporter(): void {
 				if (endOfArgsMarkerIndex === -1) {
 					argv.push('--crash-reporter-id', crashReporterId);
 				} else {
+					// 【中文注】若存在参数结束标记 "--",不能追加到末尾,
+					// 必须把参数插入到 "--" 之前
 					// if the we have an argument "--" (end of argument marker)
 					// we cannot add arguments at the end. rather, we add
 					// arguments before the "--" marker.
@@ -533,6 +605,7 @@ function configureCrashReporter(): void {
 		}
 	}
 
+	// 【中文注】为所有进程启动崩溃报告器;开发模式不上传
 	// Start crash reporter for all processes
 	const productName = (product.crashReporter ? product.crashReporter.productName : undefined) || product.nameShort;
 	const companyName = (product.crashReporter ? product.crashReporter.companyName : undefined) || 'Microsoft';
@@ -586,6 +659,10 @@ function parseCLIArgs(): NativeParsedArgs {
 function registerListeners(): void {
 
 	/**
+	 * 【中文注】macOS:当用户把文件拖到尚未启动完成的 VS Code 图标上时,
+	 * open-file 事件甚至早于 app-ready 事件触发。这里尽早在启动阶段
+	 * 监听 open-file 并记住这些路径,作为待打开的文件。
+	 *
 	 * macOS: when someone drops a file to the not-yet running VSCode, the open-file event fires even before
 	 * the app-ready event. We listen very early for open-file and remember this upon startup as path to open.
 	 */
@@ -596,6 +673,7 @@ function registerListeners(): void {
 	});
 
 	/**
+	 * 【中文注】macOS:响应 open-url 请求(如 vscode:// 协议链接)
 	 * macOS: react to open-url requests.
 	 */
 	const openUrls: string[] = [];
@@ -619,16 +697,19 @@ function registerListeners(): void {
 
 function getCodeCachePath(): string | undefined {
 
+	// 【中文注】通过命令行参数显式禁用代码缓存
 	// explicitly disabled via CLI args
 	if (process.argv.indexOf('--no-cached-data') > 0) {
 		return undefined;
 	}
 
+	// 【中文注】从源码运行时不使用代码缓存
 	// running out of sources
 	if (process.env['VSCODE_DEV']) {
 		return undefined;
 	}
 
+	// 【中文注】代码缓存必须绑定 commit id(否则缓存可能失配)
 	// require commit id
 	const commit = product.commit;
 	if (!commit) {
@@ -652,12 +733,20 @@ async function mkdirpIgnoreError(dir: string | undefined): Promise<string | unde
 	return undefined;
 }
 
+// 【中文注】NLS(自然语言支持)相关
 //#region NLS Support
 
+// 【中文注】规范化中文区域:Windows/macOS 返回 zh-hans/zh-hant 前缀,
+// 可直接判断简繁;Linux 返回 zh-XY(国家代码)形式,
+// CN/SG/MY 视为简体,其余视为繁体。
 function processZhLocale(appLocale: string): string {
 	if (appLocale.startsWith('zh')) {
 		const region = appLocale.split('-')[1];
 
+		// 【中文注】Windows 与 macOS 上 app.getPreferredSystemLanguages()
+		// 返回的中文以 zh-hans(简体)或 zh-hant(繁体)开头,可直接区分;
+		// 而 Linux 上同一 API 返回 zh-XY 形式(XY 为国家代码),
+		// 中国(CN)、新加坡(SG)、马来西亚(MY)视为简体,其余视为繁体。
 		// On Windows and macOS, Chinese languages returned by
 		// app.getPreferredSystemLanguages() start with zh-hans
 		// for Simplified Chinese or zh-hant for Traditional Chinese,
@@ -678,10 +767,14 @@ function processZhLocale(appLocale: string): string {
 }
 
 /**
+ * 【中文注】解析 NLS 配置:优先用 app.ready 前已定义的语言(argv.json),
+ * 其次用 app.getLocale() 拿到的应用语言,最终兜底英文。
+ *
  * Resolve the NLS configuration
  */
 async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 
+	// 【中文注】解析顺序:用户自定义语言 → 应用语言 → 英文兜底
 	// First, we need to test a user defined locale.
 	// If it fails we try the app locale.
 	// If that fails we fall back to English.
@@ -691,6 +784,7 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 		return nlsConfiguration;
 	}
 
+	// 【中文注】尝试使用应用语言(仅在 app ready 事件触发后才有效)
 	// Try to use the app locale which is only valid
 	// after the app ready event has been fired.
 
@@ -721,6 +815,10 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 }
 
 /**
+ * 【中文注】语言标签本身不区分大小写,但 ESM 加载器对路径大小写敏感。
+ * 为了在大小写保留/不敏感的文件系统上都能工作:
+ * 语言包统一使用小写语言标签,同时把来自用户或 OS 的区域统一转小写。
+ *
  * Language tags are case insensitive however an ESM loader is case sensitive
  * To make this work on case preserving & insensitive FS we do the following:
  * the language bundles have lower case language tags and we always lower case
@@ -729,7 +827,7 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 function getUserDefinedLocale(argvConfig: IArgvConfig): string | undefined {
 	const locale = args['locale'];
 	if (locale) {
-		return locale.toLowerCase(); // a directly provided --locale always wins
+		return locale.toLowerCase(); // 【中文注】直接传入的 --locale 优先级最高
 	}
 
 	return typeof argvConfig?.locale === 'string' ? argvConfig.locale.toLowerCase() : undefined;

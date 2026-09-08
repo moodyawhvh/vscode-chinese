@@ -1,35 +1,37 @@
-# VS Code Smoke Test
+# VS Code 冒烟测试
 
-Make sure you are on **Node v12.x**.
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
 
-## Quick Overview
+请确保你使用的是 **Node v12.x**。
+
+## 快速概览
 
 ```bash
-# Build extensions in the VS Code repo (if needed)
+# 构建 VS Code 仓库中的扩展(如有需要)
 npm i && npm run compile
 
-# Dev (Electron)
+# 开发版(Electron)
 npm run smoketest
 
-# Dev (Web - Must be run on distro)
+# 开发版(Web - 必须在发行版上运行)
 npm run smoketest -- --web --browser [chromium|webkit]
 
-# Build (Electron)
-npm run smoketest -- --build <path to latest version>
-example: npm run smoketest -- --build /Applications/Visual\ Studio\ Code\ -\ Insiders.app
+# 构建版(Electron)
+npm run smoketest -- --build <最新版本路径>
+示例: npm run smoketest -- --build /Applications/Visual\ Studio\ Code\ -\ Insiders.app
 
-# Build (Web - read instructions below)
-npm run smoketest -- --build <path to server web build (ends in -web)> --web --browser [chromium|webkit]
+# 构建版(Web - 阅读下文说明)
+npm run smoketest -- --build <server web 构建路径(以 -web 结尾)> --web --browser [chromium|webkit]
 
-# Remote (Electron)
-npm run smoketest -- --build <path to latest version> --remote
+# 远程(Electron)
+npm run smoketest -- --build <最新版本路径> --remote
 ```
 
-\* This step is necessary only when running without `--build` and OSS doesn't already exist in the `.build/electron` directory.
+\* 只有在不带 `--build` 运行、且 `.build/electron` 目录中尚不存在 OSS 构建时,才需要此步骤。
 
-### Running for a release (Endgame)
+### 发布流程运行(Endgame)
 
-You must always run the smoketest version that matches the release you are testing. So, if you want to run the smoketest for a release build (e.g. `release/1.22`), you need to check out that version of the smoke tests too:
+你必须始终运行与被测发布版本相匹配的冒烟测试版本。因此,如果你想针对某个发布构建(例如 `release/1.22`)运行冒烟测试,也需要检出该版本的冒烟测试代码:
 
 ```bash
 git fetch
@@ -41,46 +43,46 @@ npm i
 
 #### Web
 
-There is no support for testing an old version to a new one yet.
-Instead, simply configure the `--build` command line argument to point to the absolute path of the extracted server web build folder (e.g. `<rest of path here>/vscode-server-darwin-x64-web` for macOS). The server web build is available from the builds page (see previous subsection).
+目前尚不支持用旧版本测试新版本。
+替代做法是,把 `--build` 命令行参数配置为解压后的 server web 构建文件夹的绝对路径(例如 macOS 上为 `<其余路径>/vscode-server-darwin-x64-web`)。server web 构建可以从构建页面获取(见上一小节)。
 
-**macOS**: if you have downloaded the server with web bits, make sure to run the following command before unzipping it to avoid security issues on startup:
+**macOS**:如果你下载了带 web 组件的 server,解压前请务必运行以下命令,以避免启动时的安全问题:
 
 ```bash
-xattr -d com.apple.quarantine <path to server with web folder zip>
+xattr -d com.apple.quarantine <带 web 文件夹的 server zip 路径>
 ```
 
-**Note**: make sure to point to the server that includes the client bits!
+**注意**:请确保指向的是包含客户端组件的 server!
 
-### Debug
+### 调试
 
-- `--verbose` logs all the low level driver calls made to Code;
-- `-f PATTERN` (alias `-g PATTERN`) filters the tests to be run. You can also use pretty much any mocha argument;
-- `--headless` will run playwright in headless mode when `--web` is used.
+- `--verbose` 记录所有对 Code 的底层驱动调用;
+- `-f PATTERN`(别名 `-g PATTERN`)过滤要运行的测试。几乎所有 mocha 参数都可以使用;
+- `--headless` 在使用 `--web` 时以无头模式运行 playwright。
 
-**Note**: you can enable verbose logging of playwright library by setting a `DEBUG` environment variable before running the tests (<https://playwright.dev/docs/debug#verbose-api-logs>), for example to `pw:browser`.
+**注意**:运行测试前设置 `DEBUG` 环境变量(例如设为 `pw:browser`),可以开启 playwright 库的详细日志输出(<https://playwright.dev/docs/debug#verbose-api-logs>)。
 
-### Develop
+### 开发
 
 ```bash
 cd test/smoke
 npm run watch
 ```
 
-## Troubleshooting
+## 故障排查
 
-### Error: Could not get a unique tmp filename, max tries reached
+### 错误:Could not get a unique tmp filename, max tries reached
 
-On Windows, check for the folder `C:\Users\<username>\AppData\Local\Temp\t`. If this folder exists, the `tmp` module can't run properly, resulting in the error above. In this case, delete the `t` folder.
+在 Windows 上,请检查 `C:\Users\<用户名>\AppData\Local\Temp\t` 文件夹。如果该文件夹存在,`tmp` 模块将无法正常运行,从而导致上述错误。此时删除 `t` 文件夹即可。
 
-## Pitfalls
+## 常见陷阱
 
-- Beware of workbench **state**. The tests within a single suite will share the same state.
+- 当心工作台(workbench)**状态**。同一套件内的测试会共享相同的状态。
 
-- Beware of **singletons**. This evil can, and will, manifest itself under the form of FS paths, TCP ports, IPC handles. Whenever writing a test, or setting up more smoke test architecture, make sure it can run simultaneously with any other tests and even itself. All test suites should be able to run many times in parallel.
+- 当心**单例**。这种"邪恶"会以文件系统路径、TCP 端口、IPC 句柄的形式显现。无论何时编写测试,或搭建更多冒烟测试架构,都要确保它能与任何其他测试、甚至与它自身并行运行。所有测试套件都应当能多次并行运行。
 
-- Beware of **focus**. **Never** depend on DOM elements having focus using `.focused` classes or `:focus` pseudo-classes, since they will lose that state as soon as another window appears on top of the running VS Code window. A safe approach which avoids this problem is to use the `waitForActiveElement` API. Many tests use this whenever they need to wait for a specific element to _have focus_.
+- 当心**焦点**。**绝不**要依赖 `.focused` 类或 `:focus` 伪类来判断 DOM 元素是否持有焦点,因为一旦有其他窗口覆盖在正在运行的 VS Code 窗口之上,它们就会失去该状态。一种安全的替代方案是使用 `waitForActiveElement` API。许多测试在需要等待特定元素_获得焦点_时都会使用它。
 
-- Beware of **timing**. You need to read from or write to the DOM... but is it the right time to do that? Can you 100% guarantee that `input` box will be visible at that point in time? Or are you just hoping that it will be so? Hope is your worst enemy in UI tests. Example: just because you triggered Quick Access with `F1`, it doesn't mean that it's open and you can just start typing; you must first wait for the input element to be in the DOM as well as be the current active element.
+- 当心**时机**。你需要读取或写入 DOM……但现在真的是做这件事的正确时机吗?你能 100% 保证那一刻 `input` 输入框已经可见吗?还是只是希望如此?在 UI 测试中,侥幸心理是你最大的敌人。举例:触发了 `F1` 打开快速访问,并不代表它已经打开、可以直接开始输入;你必须先等待输入元素出现在 DOM 中,并且成为当前的活动元素。
 
-- Beware of **waiting**. **Never** wait longer than a couple of seconds for anything, unless it's justified. Think of it as a human using Code. Would a human take 10 minutes to run through the Search viewlet smoke test? Then, the computer should even be faster. **Don't** use `setTimeout` just because. Think about what you should wait for in the DOM to be ready and wait for that instead.
+- 当心**等待**。**绝不**要等待超过几秒钟的时间,除非有充分理由。把测试想象成一个使用 Code 的人类:人类会花 10 分钟跑完搜索视图的冒烟测试吗?不会,那计算机更应该更快。**不要**无缘无故使用 `setTimeout`。想清楚你在等 DOM 中的什么准备就绪,然后等待那个条件。
