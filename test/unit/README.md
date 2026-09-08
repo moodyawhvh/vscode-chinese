@@ -1,39 +1,41 @@
-# Unit Tests
+# 单元测试
 
-## Run (inside Electron)
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
+
+## 运行(在 Electron 内)
 
     ./scripts/test.[sh|bat]
 
-All unit tests are run inside a Electron renderer environment which access to DOM and Nodejs api. This is the closest to the environment in which VS Code itself ships. Notes:
+所有单元测试都在 Electron 渲染进程环境中运行,可同时访问 DOM 和 Node.js API。这与 VS Code 本体发布时的运行环境最接近。注意:
 
-- use the `--dev` to see an electron window with dev tools which allows for debugging
-- to run only a subset of tests use the `--run` or `--glob` options
-- use `npm run watch` to automatically compile changes
+- 使用 `--dev` 可以打开带开发者工具的 Electron 窗口,便于调试
+- 只运行一部分测试时,使用 `--run` 或 `--glob` 选项
+- 使用 `npm run watch` 自动编译改动
 
-For instance, `./scripts/test.sh --debug --glob **/extHost*.test.js` runs all tests from `extHost`-files and enables you to debug them.
+例如,`./scripts/test.sh --debug --glob **/extHost*.test.js` 会运行来自 `extHost` 文件的所有测试,并支持调试。
 
-## Run (inside browser)
+## 运行(在浏览器内)
 
     npm run test-browser -- --browser webkit --browser chromium
 
-Unit tests from layers `common` and `browser` are run inside `chromium`, `webkit`, and (soon'ish) `firefox` (using playwright). This complements our electron-based unit test runner and adds more coverage of supported platforms. Notes:
+`common` 层和 `browser` 层的单元测试会在 `chromium`、`webkit` 以及(不久后的)`firefox` 中运行(基于 playwright)。它补充了基于 Electron 的单元测试运行器,覆盖更多受支持平台。注意:
 
-- these tests are part of the continuous build, that means you might have test failures that only happen with webkit on _windows_ or _chromium_ on linux
-- you can run these tests locally via `npm run test-browser -- --browser chromium --browser webkit`
-- to debug, open `<vscode>/test/unit/browser/renderer.html` inside a browser and use the `?m=<amd_module>`-query to specify what AMD module to load, e.g `file:///Users/jrieken/Code/vscode/test/unit/browser/renderer.html?m=vs/base/test/common/strings.test` runs all tests from `strings.test.ts`
-- to run only a subset of tests use the `--run` or `--glob` options
+- 这些测试是持续构建的一部分,也就是说你可能遇到只在 _windows_ 上的 webkit 或 linux 上的 _chromium_ 中出现的测试失败
+- 你可以在本地运行这些测试:`npm run test-browser -- --browser chromium --browser webkit`
+- 调试时,在浏览器中打开 `<vscode>/test/unit/browser/renderer.html`,并通过 `?m=<amd_module>` 查询参数指定要加载的 AMD 模块,例如 `file:///Users/jrieken/Code/vscode/test/unit/browser/renderer.html?m=vs/base/test/common/strings.test` 会运行 `strings.test.ts` 中的所有测试
+- 只运行一部分测试时,使用 `--run` 或 `--glob` 选项
 
-**Note**: you can enable verbose logging of playwright library by setting a `DEBUG` environment variable before running the tests (https://playwright.dev/docs/debug#verbose-api-logs)
+**注意**:运行测试前设置 `DEBUG` 环境变量,可以开启 playwright 库的详细日志输出(https://playwright.dev/docs/debug#verbose-api-logs)
 
-## Run (with node)
+## 运行(在 Node 中)
 
     npm run test-node -- --run src/vs/editor/test/browser/controller/cursor.test.ts
 
-## Coverage
+## 覆盖率
 
-The following command will create a `coverage` folder in the `.build` folder at the root of the workspace:
+以下命令会在工作区根目录的 `.build` 文件夹中创建 `coverage` 文件夹:
 
-### OS X and Linux
+### OS X 与 Linux
 
     ./scripts/test.sh --coverage
 

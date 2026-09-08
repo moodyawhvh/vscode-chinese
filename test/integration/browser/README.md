@@ -1,29 +1,31 @@
-# Integration test
+# 集成测试
 
-## Compile
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
 
-Make sure to run the following commands to compile and install dependencies:
+## 编译
+
+请确保先运行以下命令完成编译并安装依赖:
 
     cd test/integration/browser
     npm i
     npm run compile
 
-## Run (inside Electron)
+## 运行(在 Electron 内)
 
     scripts/test-integration.[sh|bat]
 
-All integration tests run in an Electron instance. You can specify to run the tests against a real build by setting the environment variables `INTEGRATION_TEST_ELECTRON_PATH` and `VSCODE_REMOTE_SERVER_PATH` (if you want to include remote tests).
+所有集成测试都在一个 Electron 实例中运行。你可以通过设置环境变量 `INTEGRATION_TEST_ELECTRON_PATH` 和 `VSCODE_REMOTE_SERVER_PATH`(如果希望包含远程测试),指定针对真实构建产物运行测试。
 
-## Run (inside browser)
+## 运行(在浏览器内)
 
     scripts/test-web-integration.[sh|bat] --browser [chromium|webkit] [--debug]
 
-All integration tests run in a browser instance as specified by the command line arguments.
+所有集成测试都会在命令行参数指定的浏览器实例中运行。
 
-Add the `--debug` flag to see a browser window with the tests running.
+加上 `--debug` 标志可以看到一个浏览器窗口,实时展示测试运行过程。
 
-**Note**: you can enable verbose logging of playwright library by setting a `DEBUG` environment variable before running the tests (<https://playwright.dev/docs/debug#verbose-api-logs>)
+**注意**:运行测试前设置 `DEBUG` 环境变量,可以开启 playwright 库的详细日志输出(<https://playwright.dev/docs/debug#verbose-api-logs>)
 
-## Debug
+## 调试
 
-All integration tests can be run and debugged from within VSCode (both Electron and Web) simply by selecting the related launch configuration and running them.
+所有集成测试(无论 Electron 还是 Web)都可以直接在 VS Code 内运行和调试:只需选择对应的启动配置并运行即可。

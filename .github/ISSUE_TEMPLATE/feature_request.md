@@ -1,14 +1,16 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: 功能请求
+about: 为本项目提出一个想法
 title: ''
 labels: ''
 assignees: ''
 
 ---
 
-<!-- ⚠️⚠️ Do Not Delete This! feature_request_template ⚠️⚠️ -->
-<!-- Please read our Rules of Conduct: https://opensource.microsoft.com/codeofconduct/ -->
-<!-- Please search existing issues to avoid creating duplicates. -->
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
 
-<!-- Describe the feature you'd like. -->
+<!-- ⚠️⚠️ Do Not Delete This! feature_request_template ⚠️⚠️ -->
+<!-- 请阅读我们的行为准则:https://opensource.microsoft.com/codeofconduct/ -->
+<!-- 请先搜索已有 issue,避免重复提交。 -->
+
+<!-- 描述你想要的功能。 -->

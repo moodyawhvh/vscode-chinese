@@ -1,10 +1,12 @@
-# VS Code Tests
+# VS Code 测试
 
-## Contents
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
 
-This folder contains the various test runners for VS Code. Please refer to the documentation within for how to run them:
+## 目录
 
-* `unit`: our suite of unit tests ([README](unit/README.md))
-* `integration`: our suite of API tests ([README](integration/browser/README.md))
-* `smoke`: our suite of automated UI tests ([README](smoke/README.md))
-* `sanity`: release sanity tests ([README](sanity/README.md))
+本文件夹包含 VS Code 的各类测试运行器。有关运行方式,请参阅各自的文档:
+
+* `unit`:单元测试套件([README](unit/README.md))
+* `integration`:API 测试套件([README](integration/browser/README.md))
+* `smoke`:自动化 UI 测试套件([README](smoke/README.md))
+* `sanity`:发布冒烟测试([README](sanity/README.md))
