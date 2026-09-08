@@ -1,99 +1,100 @@
-# Contributing to VS Code
+# 为 VS Code 做贡献
 
-Welcome, and thank you for your interest in contributing to VS Code!
+欢迎,感谢你对参与 VS Code 贡献感兴趣!
 
-There are several ways in which you can contribute, beyond writing code. The goal of this document is to provide a high-level overview of how you can get involved.
+除了编写代码之外,你还可以通过多种方式做出贡献。本文档的目标是提供一份参与贡献的高层次概览。
 
-## Asking Questions
+> 🌐 本文档由 [microsoft/vscode](https://github.com/microsoft/vscode) 翻译,英文原版见原项目。
 
+## 提问
 
-Have a question? Instead of opening an issue, please ask on [Stack Overflow](https://stackoverflow.com/questions/tagged/visual-studio-code) using the tag `visual-studio-code`.
+有问题?请不要直接开 issue,而是带上 `visual-studio-code` 标签到 [Stack Overflow](https://stackoverflow.com/questions/tagged/visual-studio-code) 上提问。
 
-The active community will be eager to assist you. Your well-worded question will serve as a resource to others searching for help.
+活跃的社区会很乐意帮助你。一个表述清晰的问题,也会成为后来者寻求帮助时的宝贵资源。
 
-## Providing Feedback
+## 提供反馈
 
-Your comments and feedback are welcome, and the development team is available via a handful of different channels.
+我们欢迎你的评论与反馈,开发团队也会通过多个不同渠道保持在线。
 
-See the [Feedback Channels](https://github.com/microsoft/vscode/wiki/Feedback-Channels) wiki page for details on how to share your thoughts.
+有关分享意见的具体方式,请参阅 [反馈渠道](https://github.com/microsoft/vscode/wiki/Feedback-Channels) wiki 页面。
 
-## Reporting Issues
+## 报告问题
 
-Have you identified a reproducible problem in VS Code? Do you have a feature request? We want to hear about it! Here's how you can report your issue as effectively as possible.
+你在 VS Code 中发现了一个可复现的问题?或者你有一项功能请求?我们想听听!以下是让你的 issue 尽可能高效提交的方法。
 
-### Identify Where to Report
+### 确定报告位置
 
-The VS Code project is distributed across multiple repositories. Try to file the issue against the correct repository. Check the list of [Related Projects](https://github.com/microsoft/vscode/wiki/Related-Projects) if you aren't sure which repo is correct.
+VS Code 项目分散在多个仓库中。请尽量把 issue 提交到正确的仓库。如果不确定哪个仓库才对,请查看[相关项目列表](https://github.com/microsoft/vscode/wiki/Related-Projects)。
 
-Can you recreate the issue even after [disabling all extensions](https://code.visualstudio.com/docs/editor/extension-gallery#_disable-an-extension)? If you find the issue is caused by an extension you have installed, please file an issue on the extension's repo directly.
+在[禁用所有扩展](https://code.visualstudio.com/docs/editor/extension-gallery#_disable-an-extension)之后,问题还能复现吗?如果确认问题由你安装的某个扩展导致,请直接到该扩展的仓库提交 issue。
 
-### Look For an Existing Issue
+### 查找已有 issue
 
-Before you create a new issue, please do a search in [open issues](https://github.com/microsoft/vscode/issues) to see if the issue or feature request has already been filed.
+创建新 issue 之前,请先在[开放 issue](https://github.com/microsoft/vscode/issues) 中搜索,看看该问题或功能请求是否已被提交过。
 
-Be sure to scan through the [most popular](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc) feature requests.
+请务必浏览[最受欢迎的](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)功能请求列表。
 
-If you find your issue already exists, make relevant comments and add your [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments). Use a reaction in place of a "+1" comment:
+如果你发现 issue 已经存在,请补充相关评论并添加你的 [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments)。用 reaction 代替 "+1" 式的评论:
 
-* 👍 - upvote
-* 👎 - downvote
+* 👍 - 支持
+* 👎 - 反对
 
-If you cannot find an existing issue that describes your bug or feature, create a new issue using the guidelines below.
+如果找不到能描述你的 bug 或功能需求的已有 issue,请按照下面的指引创建新 issue。
 
-### Writing Good Bug Reports and Feature Requests
+### 撰写高质量的 Bug 报告与功能请求
 
-File a single issue per problem and feature request. Do not enumerate multiple bugs or feature requests in the same issue.
+每个问题、每条功能请求只提交一个 issue。不要在同一个 issue 里罗列多个 bug 或功能请求。
 
-Do not add your issue as a comment to an existing issue unless it's for the identical issue. Many issues look similar but have different causes.
+除非是完全相同的问题,否则不要把你的 issue 作为评论追加到已有 issue 上。很多 issue 看似相似,成因却各不相同。
 
-The more information you can provide, the more likely someone will be successful at reproducing the issue and finding a fix.
+你提供的信息越多,别人成功复现问题并找到修复方案的可能性就越大。
 
-The built-in tool for reporting an issue, which you can access by using `Report Issue` in VS Code's Help menu, can help streamline this process by automatically providing the version of VS Code, all your installed extensions, and your system info. Additionally, the tool will search among existing issues to see if a similar issue already exists.
+VS Code 内置的问题报告工具(可通过帮助菜单中的 `Report Issue` 打开)能自动附带 VS Code 版本、已安装扩展列表和系统信息,帮你简化流程。此外,该工具还会在已有 issue 中搜索是否存在类似问题。
 
-Please include the following with each issue:
+提交每个 issue 时请附带以下信息:
 
-* Version of VS Code
-* Your operating system
-* List of extensions that you have installed
-* Reproducible steps (1... 2... 3...) that cause the issue
-* What you expected to see, versus what you actually saw
-* Images, animations, or a link to a video showing the issue occurring
-* A code snippet that demonstrates the issue or a link to a code repository the developers can easily pull down to recreate the issue locally
-  * **Note:** Because the developers need to copy and paste the code snippet, including a code snippet as a media file (i.e. .gif) is not sufficient.
-* Errors from the Dev Tools Console (open from the menu: Help > Toggle Developer Tools)
+* VS Code 版本号
+* 操作系统
+* 已安装扩展的列表
+* 能触发问题的可复现步骤(1... 2... 3...)
+* 你期望的结果与实际看到的结果
+* 展示问题发生的截图、动图或视频链接
+* 能演示问题的代码片段,或一个开发者可以轻松拉取并在本地复现问题的代码仓库链接
+  * **注意:** 开发者需要复制粘贴代码片段,所以把代码放在媒体文件里(如 .gif)是不够的。
+* Dev Tools 控制台的报错信息(从菜单打开:帮助 > 切换开发人员工具)
 
-### Creating Pull Requests
+### 创建 Pull Request
 
-* Please refer to the article on [creating pull requests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#pull-requests) and contributing to this project.
+* 请参阅关于[创建 pull request](https://github.com/microsoft/vscode/wiki/How-to-Contribute#pull-requests) 以及为本项目做贡献的文章。
 
-### Final Checklist
+### 提交前最终检查
 
-Please remember to do the following:
+请记得完成以下事项:
 
-* [ ] Search the issue repository to ensure your report is a new issue
-* [ ] Recreate the issue after disabling all extensions
-* [ ] Simplify your code around the issue to better isolate the problem
+* [ ] 在 issue 仓库中搜索,确认你的报告是新问题
+* [ ] 在禁用所有扩展后复现该问题
+* [ ] 精简问题周边的代码,更好地隔离问题
 
-Don't feel bad if the developers can't reproduce the issue right away. They will simply ask for more information!
+如果开发者没能立刻复现问题,也别灰心。他们只会向你请求更多信息!
 
-### Follow Your Issue
+### 跟进你的 issue
 
-Once submitted, your report will go into the [issue tracking](https://github.com/microsoft/vscode/wiki/Issue-Tracking) workflow. Be sure to understand what will happen next, so you know what to expect and how to continue to assist throughout the process.
+提交之后,你的报告将进入 [issue 跟踪](https://github.com/microsoft/vscode/wiki/Issue-Tracking)流程。请了解接下来会发生什么,这样你才知道该期待什么,以及在整个过程中如何继续提供协助。
 
-## Automated Issue Management
+## 自动化 issue 管理
 
-We use GitHub Actions to help us manage issues. These Actions and their descriptions can be [viewed here](https://github.com/microsoft/vscode-github-triage-actions). Some examples of what these Actions do are:
+我们使用 GitHub Actions 来协助管理 issue。这些 Action 及其说明可以[在这里查看](https://github.com/microsoft/vscode-github-triage-actions)。它们的部分功能举例:
 
-* Automatically close any issue marked `info-needed` if there has been no response in the past 7 days.
-* Automatically lock issues 45 days after they are closed.
-* Automatically implement the VS Code [feature request pipeline](https://github.com/microsoft/vscode/wiki/Issues-Triaging#managing-feature-requests).
+* 自动关闭任何被标记为 `info-needed` 且过去 7 天内没有回应的 issue。
+* 在 issue 关闭 45 天后自动锁定。
+* 自动执行 VS Code 的[功能请求流水线](https://github.com/microsoft/vscode/wiki/Issues-Triaging#managing-feature-requests)。
 
-If you believe the bot got something wrong, please open a new issue and let us know.
+如果你认为机器人处理有误,请开一个新 issue 告诉我们。
 
-## Contributing Fixes
+## 贡献修复
 
-If you are interested in writing code to fix issues, please see [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute) in the wiki.
+如果你有兴趣编写代码修复问题,请参阅 wiki 中的 [如何贡献](https://github.com/microsoft/vscode/wiki/How-to-Contribute)。
 
-## Thank You
+## 致谢
 
-Your contributions to open source, large or small, make great projects like this possible. Thank you for taking the time to contribute.
+你对开源大大小小的贡献,成就了像这样伟大的项目。感谢你抽出时间参与贡献。
